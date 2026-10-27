@@ -1,0 +1,3902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build A Resume — free ATS-friendly resume builder. Create, preview and download your resume as a professional PDF.">
+<meta name="theme-color" content="#ffffff">
+<title>Build A Resume — ATS-Friendly Resume Maker</title>
+<link rel="icon" type="image/png" href="icon.png">
+
+<!-- Theme is applied before CSS paints to prevent a flash of the wrong theme. -->
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem('resumeBuilder.theme');
+    var theme = (saved === 'light' || saved === 'dark') ? saved : null;
+    if (!theme) {
+      theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+</script>
+
+<style>
+/* =========================================================
+   1. DESIGN TOKENS — strict black / white / grayscale
+   ========================================================= */
+:root {
+  /* Light theme */
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --surface-3: #f0f0f0;
+  --surface-4: #e8e8e8;
+  --border: #e2e2e2;
+  --border-strong: #c8c8c8;
+  --text: #0a0a0a;
+  --text-secondary: #555555;
+  --text-muted: #888888;
+  --accent: #0a0a0a;
+  --accent-hover: #262626;
+  --accent-contrast: #ffffff;
+  --danger-bg: #f5f5f5;
+  --danger-bg-hover: #eaeaea;
+  --danger-text: #0a0a0a;
+  --danger-border: #c8c8c8;
+  --preview-canvas: #ececec;
+  --focus-ring: 0 0 0 3px rgba(10, 10, 10, 0.16);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 1px 3px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+  --overlay: rgba(0, 0, 0, 0.45);
+
+  --header-height: 62px;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-lg: 14px;
+}
+
+[data-theme="dark"] {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1a1a1a;
+  --surface-3: #222222;
+  --surface-4: #2c2c2c;
+  --border: #2a2a2a;
+  --border-strong: #3d3d3d;
+  --text: #f5f5f5;
+  --text-secondary: #b4b4b4;
+  --text-muted: #858585;
+  --accent: #ffffff;
+  --accent-hover: #dcdcdc;
+  --accent-contrast: #0a0a0a;
+  --danger-bg: #1a1a1a;
+  --danger-bg-hover: #262626;
+  --danger-text: #f5f5f5;
+  --danger-border: #3d3d3d;
+  --preview-canvas: #0d0d0d;
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.22);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.5), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --overlay: rgba(0, 0, 0, 0.7);
+}
+
+/* =========================================================
+   2. BASE
+   ========================================================= */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+input, textarea, select, button { color: inherit; }
+
+/* =========================================================
+   3. APP HEADER / NAVIGATION
+   ========================================================= */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.app-header-inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  min-height: var(--header-height);
+}
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  flex: none;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 9px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+[data-theme="dark"] .brand-mark {
+  border-color: var(--border-strong);
+}
+
+.brand-icon {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.brand-icon--missing { display: none; }
+
+.brand-letter {
+  grid-area: 1 / 1;
+  display: none;
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+.brand-icon--missing ~ .brand-letter { display: block; }
+
+.brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.brand-name { font-weight: 700; font-size: 15px; letter-spacing: -0.1px; }
+.brand-sub { font-size: 11.5px; color: var(--text-muted); }
+
+/* Section navigation — desktop inline, mobile drawer. */
+.section-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 2px;
+}
+.section-nav::-webkit-scrollbar { display: none; }
+
+.section-link {
+  flex: none;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 7px;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.section-link:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.section-link.is-active {
+  background: var(--surface-3);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Header actions */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.save-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  flex: none;
+}
+.save-status[data-status="saving"]::before {
+  animation: savePulse 1s ease-in-out infinite;
+}
+.save-status[data-status="error"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.save-status[data-status="error"]::before {
+  border-radius: 2px;
+  opacity: 1;
+}
+@keyframes savePulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
+/* =========================================================
+   4. BUTTONS & ICON BUTTONS
+   ========================================================= */
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+.btn:hover { background: var(--surface-3); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--danger-text);
+  border-color: var(--danger-border);
+}
+.btn-danger:hover { background: var(--danger-bg-hover); }
+
+.btn-sm { font-size: 12.5px; padding: 5px 10px; }
+
+.btn-block {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.btn-icon { width: 16px; height: 16px; flex: none; }
+
+.btn-label-short { display: none; }
+
+/* Icon-only buttons */
+.icon-btn {
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  flex: none;
+}
+.icon-btn:hover { background: var(--surface-3); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* Theme toggle icon swap */
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+
+/* Mobile hamburger — hidden on desktop */
+.mobile-menu-toggle { display: none; }
+.mobile-menu-toggle .icon-close { display: none; }
+.mobile-menu-toggle[aria-expanded="true"] .icon-menu { display: none; }
+.mobile-menu-toggle[aria-expanded="true"] .icon-close { display: block; }
+
+/* =========================================================
+   5. DROPDOWN MENU (secondary actions)
+   ========================================================= */
+.menu-container { position: relative; flex: none; }
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  min-width: 220px;
+  z-index: 200;
+}
+.dropdown-menu[hidden] { display: none; }
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.menu-item:hover { background: var(--surface-3); }
+.menu-item svg { width: 16px; height: 16px; flex: none; color: var(--text-muted); }
+.menu-item-danger { font-weight: 600; }
+.menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}
+
+/* =========================================================
+   6. LAYOUT & MOBILE VIEW TOGGLE
+   ========================================================= */
+.mobile-view-toggle {
+  display: none;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 8px 14px 0;
+}
+
+.view-tab {
+  flex: 1 1 0;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.view-tab:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.view-tab:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; border-left: none; }
+.view-tab.is-active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+.view-tab svg { width: 16px; height: 16px; }
+
+.app-grid {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(340px, 470px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  flex: 1;
+  width: 100%;
+}
+
+/* =========================================================
+   7. EDITOR CARDS
+   ========================================================= */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+  overflow: hidden;
+  scroll-margin-top: 90px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.card > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+.card > summary::-webkit-details-marker { display: none; }
+.card > summary:hover { background: var(--surface-2); }
+
+.card > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  margin-right: 3px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+.card[open] > summary::after { transform: rotate(-135deg); }
+
+.card-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.field-help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.option-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+
+/* =========================================================
+   8. FORM FIELDS
+   ========================================================= */
+.field { margin-bottom: 12px; }
+
+.field > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.text-input {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.2s ease;
+}
+.text-input::placeholder { color: var(--text-muted); opacity: 0.85; }
+.text-input:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+textarea.text-input { resize: vertical; min-height: 96px; line-height: 1.5; }
+
+select.text-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%23666666' stroke-width='2' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px 8px;
+  padding-right: 34px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+[data-theme="dark"] select.text-input {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath fill='none' stroke='%23aaaaaa' stroke-width='2' d='M1 1l5 5 5-5'/%3e%3c/svg%3e");
+}
+
+input[type="file"].text-input {
+  padding: 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+input[type="file"].text-input::file-selector-button {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  margin-right: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-3);
+  color: var(--text);
+  cursor: pointer;
+}
+input[type="file"].text-input::file-selector-button:hover { background: var(--surface-4); }
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 8px;
+}
+.photo-row[hidden] { display: none; }
+
+.photo-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-3);
+  flex: none;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+.switch input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+.switch:hover span { color: var(--text); }
+
+.toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0 14px;
+}
+
+/* =========================================================
+   9. DYNAMIC ENTRIES / CHIPS
+   ========================================================= */
+.entry-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--surface-2);
+}
+
+.entry-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.entry-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.inline-add {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.inline-add .text-input { flex: 1 1 auto; min-width: 0; }
+
+.chip-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 4px 0 6px;
+}
+
+.chip-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip-list:empty { display: none; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 2px 3px 2px 8px;
+}
+
+.chip-input {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  padding: 4px 0;
+  min-width: 56px;
+  outline: none;
+}
+
+.chip-remove {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  flex: none;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.chip-remove:hover { background: var(--danger-bg-hover); color: var(--danger-text); }
+
+/* =========================================================
+   10. PREVIEW COLUMN
+   ========================================================= */
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.preview-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.preview-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.preview-viewport {
+  background: var(--preview-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 18px;
+  overflow: hidden;
+  min-height: 200px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.preview-stage {
+  position: relative;
+  width: 100%;
+}
+
+.preview-scaler {
+  transform-origin: top left;
+  will-change: transform;
+}
+
+/* =========================================================
+   11. THE RESUME SHEET
+   ========================================================= */
+.resume-page {
+  --page-height: 297mm;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 15mm 16mm;
+  background-color: #ffffff;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--page-height) - 1px),
+    #e6e6e6 calc(var(--page-height) - 1px),
+    #e6e6e6 var(--page-height)
+  );
+  background-origin: border-box;
+  background-clip: border-box;
+
+  color: #111111;
+  font-family: Arial, Helvetica, "Helvetica Neue", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.42;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16), 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+body[data-paper="a4"] .resume-page {
+  --page-height: 297mm;
+  width: 210mm;
+  min-height: 297mm;
+}
+body[data-paper="letter"] .resume-page {
+  --page-height: 279.4mm;
+  width: 215.9mm;
+  min-height: 279.4mm;
+}
+body[data-paper="legal"] .resume-page {
+  --page-height: 355.6mm;
+  width: 215.9mm;
+  min-height: 355.6mm;
+}
+body[data-paper="a3"] .resume-page {
+  --page-height: 420mm;
+  width: 297mm;
+  min-height: 420mm;
+}
+
+/* --- Resume header --- */
+.r-header {
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid #111111;
+}
+.r-header-main {
+  display: flex;
+  align-items: center;
+  gap: 6mm;
+}
+.r-header.is-centered { text-align: center; }
+.r-header.is-centered .r-header-main { justify-content: center; }
+.r-header:not(.is-centered) { text-align: left; }
+
+.r-photo-wrap { flex: none; width: 25mm; height: 25mm; }
+.r-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid #dddddd;
+  background: #f5f5f5;
+  display: block;
+}
+.r-header-info { min-width: 0; }
+.r-name {
+  margin: 0;
+  font-size: 20pt;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: #111111;
+  word-wrap: break-word;
+}
+.r-jobtitle {
+  margin: 4px 0 0;
+  font-size: 10.5pt;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #333333;
+}
+.r-contact {
+  margin: 9px 0 0;
+  font-size: 9.5pt;
+  line-height: 1.7;
+  color: #333333;
+  text-align: center;
+  word-wrap: break-word;
+}
+.r-contact-item { white-space: nowrap; }
+.r-sep {
+  color: #999999;
+  margin: 0 7px;
+  display: inline-block;
+}
+.r-link {
+  color: #333333;
+  text-decoration: none;
+  border-bottom: 0.5pt solid #cccccc;
+}
+
+/* --- Resume sections --- */
+.r-section { margin-bottom: 13px; }
+.r-section:last-child { margin-bottom: 0; }
+
+.r-h2 {
+  margin: 0 0 6px;
+  padding-bottom: 3px;
+  font-size: 10.5pt;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: #111111;
+  border-bottom: 1px solid #cccccc;
+}
+
+.r-text {
+  margin: 0;
+  font-size: 10.5pt;
+  color: #111111;
+  white-space: pre-line;
+}
+.r-text.is-justified { text-align: justify; }
+
+.r-skills {
+  margin: 0;
+  font-size: 10.5pt;
+  color: #111111;
+  line-height: 1.6;
+  word-wrap: break-word;
+  text-align: left;
+}
+.r-skill-line { display: block; }
+.r-skill-line + .r-skill-line { margin-top: 1px; }
+.r-skill-cat { font-weight: 700; color: #111111; }
+
+.r-entry { margin-bottom: 9px; }
+.r-entry:last-child { margin-bottom: 0; }
+.r-entry-title {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #111111;
+  word-wrap: break-word;
+}
+.r-entry-sub {
+  font-size: 10.5pt;
+  color: #333333;
+  word-wrap: break-word;
+}
+.r-entry-meta {
+  font-size: 9.5pt;
+  color: #555555;
+}
+.r-entry-desc {
+  margin: 3px 0 0;
+  font-size: 10.5pt;
+  color: #111111;
+  white-space: pre-line;
+}
+
+/* References are grouped in rows so page breaks fall cleanly between rows. */
+.r-ref-grid { display: block; }
+.r-ref-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 9px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.r-ref-row:last-child { margin-bottom: 0; }
+.r-ref-row > .r-entry {
+  flex: 1 1 0;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* =========================================================
+   12. EXPORT STATE
+   ========================================================= */
+body.is-exporting .preview-scaler {
+  transform: none !important;
+  height: auto !important;
+}
+body.is-exporting .preview-viewport { overflow: visible; }
+body.is-exporting .resume-page {
+  box-shadow: none;
+  min-height: 0;
+  background-image: none;
+}
+
+/* =========================================================
+   13. PRINT
+   ========================================================= */
+@media print {
+  html, body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-header,
+  .editor-col,
+  .preview-toolbar,
+  .mobile-view-toggle,
+  .dropdown-menu,
+  .save-status,
+  .section-nav,
+  .mobile-menu-toggle,
+  .app-footer,
+  .app-modal,
+  .toast-container,
+  .donation-widget { display: none !important; }
+
+  .app-grid {
+    display: block;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  .preview-col { display: block !important; }
+  .preview-viewport {
+    background: #fff !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .preview-scaler {
+    transform: none !important;
+    height: auto !important;
+  }
+
+  .resume-page {
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+    background-image: none;
+  }
+
+  .r-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .r-h2 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}
+
+/* =========================================================
+   14. RESPONSIVE — drawer collapses at 1080px
+   ========================================================= */
+@media (max-width: 1080px) {
+  .app-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px;
+    gap: 18px;
+  }
+
+  .mobile-view-toggle {
+    display: flex;
+    gap: 0;
+    padding: 10px 14px 0;
+  }
+
+  body[data-view="edit"] .preview-col { display: none; }
+  body[data-view="preview"] .editor-col { display: none; }
+
+  .card { scroll-margin-top: 130px; }
+
+  .section-nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    max-height: calc(100vh - var(--header-height));
+    overflow-y: auto;
+    z-index: 90;
+  }
+  .section-nav.is-open { display: flex; }
+
+  .section-link {
+    padding: 11px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+
+  .mobile-menu-toggle { display: inline-flex; }
+
+  .brand-sub { display: none; }
+
+  .header-actions { margin-left: auto; }
+}
+
+/* =========================================================
+   15. SMALL PHONES (≤600px)
+   ========================================================= */
+@media (max-width: 600px) {
+  .app-header-inner { padding: 8px 10px; gap: 6px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 32px; height: 32px; border-radius: 8px; }
+  .brand-name { font-size: 13.5px; }
+
+  .header-actions { gap: 6px; }
+  .icon-btn { width: 34px; height: 34px; }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .btn { padding: 7px 10px; font-size: 12.5px; }
+
+  .save-status {
+    font-size: 10.5px;
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .save-status::before {
+    width: 5px;
+    height: 5px;
+  }
+
+  .app-grid { padding: 12px; }
+  .mobile-view-toggle { padding: 8px 10px 0; }
+  .view-tab { padding: 8px 10px; font-size: 13px; }
+
+  .preview-viewport { padding: 12px 10px; border-radius: 10px; }
+  .card-body { padding: 12px 12px 14px; }
+  .card > summary { padding: 12px 14px; }
+  .entry-card { padding: 10px; }
+
+  .text-input,
+  textarea.text-input,
+  select.text-input,
+  .chip-input {
+    font-size: 16px;
+  }
+}
+
+/* =========================================================
+   16. VERY SMALL PHONES (≤420px)
+   ========================================================= */
+@media (max-width: 420px) {
+  #btnDownload .btn-label-full,
+  #btnDownload .btn-label-short { display: none; }
+  #btnDownload { padding: 7px 10px; }
+
+  .brand-name { font-size: 13px; }
+}
+
+@media (max-width: 400px) {
+  .save-status {
+    font-size: 0;
+    padding: 4px;
+    width: 20px;
+    height: 20px;
+    justify-content: center;
+    gap: 0;
+  }
+  .save-status::before {
+    width: 8px;
+    height: 8px;
+  }
+  .brand-name { font-size: 12.5px; }
+}
+
+@media (max-width: 480px) {
+  .field-row { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* =========================================================
+   17. REDUCED MOTION
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================
+   18. CONFIRMATION & SUPPORT MODALS
+   ========================================================= */
+.app-modal {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 100%;
+  width: 100%;
+  margin: auto;
+}
+
+.app-modal::backdrop {
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  margin: 0 auto;
+  color: var(--text);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.app-modal[open] .modal-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-content {
+    transition: none;
+    transform: none;
+  }
+}
+
+.modal-inner {
+  padding: 24px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.modal-icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.modal-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.modal-body {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.modal-body p {
+  margin: 0 0 12px;
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* =========================================================
+   19. FOOTER & TOAST
+   ========================================================= */
+.app-footer {
+  max-width: 1500px;
+  margin: 40px auto 24px;
+  padding: 0 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.app-footer p { margin: 0; }
+
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.creator-attribution {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.footer-separator {
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.footer-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.footer-link:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: calc(100% - 32px);
+  max-width: 480px;
+}
+
+.toast {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
+  width: 100%;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================================
+   20. DONATION SPECIFIC STYLES
+   ========================================================= */
+.donation-qr-wrap {
+  margin: 20px 0;
+  text-align: center;
+}
+
+.donation-qr {
+  max-width: 100%;
+  width: 200px;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  padding: 12px;
+  margin: 0 auto 12px;
+  display: block;
+  object-fit: contain;
+}
+
+.qr-instruction {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.support-footer-text {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* =========================================================
+   21. DONATION CHAT HEAD & BUBBLE
+   ========================================================= */
+.donation-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+.donation-widget[hidden] {
+  display: none !important;
+}
+
+.donation-bubble {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  max-width: 260px;
+  width: max-content;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.donation-bubble.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.donation-bubble[hidden] {
+  display: none !important;
+}
+
+.donation-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: rotate(45deg);
+  z-index: 0;
+}
+
+.bubble-content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 12px 32px 12px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.bubble-content:hover {
+  color: var(--text);
+}
+
+.bubble-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  z-index: 2;
+}
+.bubble-close:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.chat-head-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.donation-chat-head {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+}
+.donation-chat-head:hover {
+  background: var(--surface-2);
+  transform: translateY(-2px);
+}
+.donation-chat-head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .donation-widget {
+    bottom: 16px;
+    right: 16px;
+    gap: 10px;
+  }
+  .donation-chat-head {
+    width: 48px;
+    height: 48px;
+    font-size: 14px;
+  }
+  .donation-bubble {
+    max-width: 220px;
+  }
+  .donation-bubble::after {
+    right: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .donation-bubble,
+  .donation-chat-head {
+    transition: none !important;
+  }
+}
+</style>
+</head>
+
+<body data-paper="a4" data-view="edit">
+
+<!-- =========================================================
+     HEADER / NAVIGATION
+     ========================================================= -->
+<header class="app-header">
+  <div class="app-header-inner">
+    <button type="button"
+            class="icon-btn mobile-menu-toggle"
+            id="mobileMenuToggle"
+            aria-label="Open sections menu"
+            aria-expanded="false"
+            aria-controls="sectionNav">
+      <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+      <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+
+    <a href="#" class="brand" aria-label="Build A Resume home" id="brandLink">
+      <div class="brand-mark" aria-hidden="true">
+        <img src="icon.png" alt="" class="brand-icon"
+             onerror="this.classList.add('brand-icon--missing');">
+        <span class="brand-letter">BR</span>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">Build A Resume</span>
+        <span class="brand-sub">ATS-friendly &middot; Multi-format PDF</span>
+      </div>
+    </a>
+
+    <nav class="section-nav" id="sectionNav" aria-label="Resume sections">
+      <a href="#sec-document" class="section-link" data-section-link>Document</a>
+      <a href="#sec-personal" class="section-link" data-section-link>Personal</a>
+      <a href="#sec-photo" class="section-link" data-section-link>Photo</a>
+      <a href="#sec-contact" class="section-link" data-section-link>Contact</a>
+      <a href="#sec-profile" class="section-link" data-section-link>Profile</a>
+      <a href="#sec-skills" class="section-link" data-section-link>Skills</a>
+      <a href="#sec-experience" class="section-link" data-section-link>Experience</a>
+      <a href="#sec-education" class="section-link" data-section-link>Education</a>
+      <a href="#sec-certificates" class="section-link" data-section-link>Certificates</a>
+      <a href="#sec-references" class="section-link" data-section-link>References</a>
+      <a href="#sec-toggles" class="section-link" data-section-link>Visibility</a>
+    </nav>
+
+    <div class="header-actions">
+      <span class="save-status" id="saveStatus" data-status="saved" aria-live="polite">Saved</span>
+
+      <button type="button"
+              class="icon-btn theme-toggle"
+              id="themeToggle"
+              aria-label="Switch to dark mode"
+              title="Switch to dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+      </button>
+
+      <button type="button" class="btn btn-primary" id="btnDownload" aria-label="Download resume as PDF">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span class="btn-label-full" id="btnDownloadText">Download PDF</span>
+        <span class="btn-label-short" id="btnDownloadTextShort">PDF</span>
+      </button>
+
+      <div class="menu-container">
+        <button type="button"
+                class="icon-btn"
+                id="moreMenuToggle"
+                aria-label="More actions"
+                aria-expanded="false"
+                aria-controls="moreMenu">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="12" r="2"/>
+            <circle cx="12" cy="12" r="2"/>
+            <circle cx="19" cy="12" r="2"/>
+          </svg>
+        </button>
+
+        <div class="dropdown-menu" id="moreMenu" hidden>
+          <button type="button" class="menu-item" id="btnPrint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print Resume
+          </button>
+          <button type="button" class="menu-item" id="btnLoadDemo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+            Load Demo Resume
+          </button>
+          <div class="menu-divider"></div>
+          <button type="button" class="menu-item menu-item-danger" id="btnClear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Clear Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile-only Edit / Preview switch -->
+<div class="mobile-view-toggle" role="group" aria-label="Editor or preview view">
+  <button type="button" class="view-tab is-active" data-view="edit" aria-pressed="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 20h9"/>
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>
+    </svg>
+    Editor
+  </button>
+  <button type="button" class="view-tab" data-view="preview" aria-pressed="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+    Preview
+  </button>
+</div>
+
+<main class="app-grid">
+
+  <!-- =========================================================
+       EDITOR COLUMN
+       ========================================================= -->
+  <section class="editor-col" aria-label="Resume editor">
+    <form id="resumeForm" novalidate>
+
+      <details class="card" id="sec-document" open>
+        <summary>Document Settings</summary>
+        <div class="card-body">
+          <div class="field">
+            <label for="paperSize">Paper Size</label>
+            <select class="text-input" id="paperSize" data-bind="paperSize">
+              <option value="a4">A4 &mdash; 210 &times; 297 mm (Standard)</option>
+              <option value="letter">Letter &mdash; 8.5 &times; 11 in (US / Canada)</option>
+              <option value="legal">Legal &mdash; 8.5 &times; 14 in (Extra length)</option>
+              <option value="a3">A3 &mdash; 297 &times; 420 mm (Extra large)</option>
+            </select>
+            <p class="field-help">
+              Choose <strong>Legal</strong> or <strong>A3</strong> if your work history,
+              projects or skills need more room than a standard A4 page.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <details class="card" id="sec-personal" open>
+        <summary>Personal Information</summary>
+        <div class="card-body">
+          <div class="field">
+            <label for="fullName">Full Name</label>
+            <input class="text-input" type="text" id="fullName" data-bind="fullName"
+                   placeholder="Enter your full name" autocomplete="name">
+          </div>
+
+          <div class="field">
+            <label for="jobTitle">Job Title</label>
+            <input class="text-input" type="text" id="jobTitle" data-bind="jobTitle"
+                   placeholder="Enter your target position">
+          </div>
+
+          <label class="switch" for="showJobTitle">
+            <input type="checkbox" id="showJobTitle" data-bind="showJobTitle">
+            <span>Show Job Title</span>
+          </label>
+
+          <hr class="option-divider">
+
+          <label class="switch" for="centerHeader">
+            <input type="checkbox" id="centerHeader" data-bind="centerHeader">
+            <span>Center photo, name &amp; job title</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-photo" open>
+        <summary>Resume Photo</summary>
+        <div class="card-body">
+          <div class="field">
+            <label for="photoInput">Upload Photo</label>
+            <input class="text-input" type="file" id="photoInput" accept="image/*">
+            <p class="field-help">
+              Your image is automatically cropped to a 1:1 square.
+            </p>
+          </div>
+
+          <div class="photo-row" id="photoRow" hidden>
+            <img class="photo-thumb" id="photoThumb" alt="Resume photo preview">
+            <button type="button" class="btn btn-sm btn-danger" id="btnRemovePhoto">
+              Remove Photo
+            </button>
+          </div>
+
+          <label class="switch" for="showPhoto">
+            <input type="checkbox" id="showPhoto" data-bind="showPhoto">
+            <span>Show Photo</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-contact" open>
+        <summary>Contact Information</summary>
+        <div class="card-body">
+
+          <div class="field">
+            <label for="contactNumber">Contact Number</label>
+            <input class="text-input" type="tel" id="contactNumber" data-bind="contactNumber"
+                   placeholder="Enter phone number" autocomplete="tel">
+          </div>
+          <label class="switch" for="showContactNumber">
+            <input type="checkbox" id="showContactNumber" data-bind="showContactNumber">
+            <span>Show Contact Number</span>
+          </label>
+
+          <div class="field" style="margin-top:12px">
+            <label for="email">Email</label>
+            <input class="text-input" type="email" id="email" data-bind="email"
+                   placeholder="name@example.com" autocomplete="email">
+          </div>
+          <label class="switch" for="showEmail">
+            <input type="checkbox" id="showEmail" data-bind="showEmail">
+            <span>Show Email</span>
+          </label>
+
+          <div class="field" style="margin-top:12px">
+            <label for="linkedin">LinkedIn URL</label>
+            <input class="text-input" type="url" id="linkedin" data-bind="linkedin"
+                   placeholder="linkedin.com/in/yourname">
+          </div>
+          <label class="switch" for="showLinkedin">
+            <input type="checkbox" id="showLinkedin" data-bind="showLinkedin">
+            <span>Show LinkedIn</span>
+          </label>
+
+          <div class="field" style="margin-top:12px">
+            <label for="portfolio">Online Portfolio Link</label>
+            <input class="text-input" type="url" id="portfolio" data-bind="portfolio"
+                   placeholder="yourname.dev">
+          </div>
+          <label class="switch" for="showPortfolio">
+            <input type="checkbox" id="showPortfolio" data-bind="showPortfolio">
+            <span>Show Online Portfolio</span>
+          </label>
+
+        </div>
+      </details>
+
+      <details class="card" id="sec-profile" open>
+        <summary>Profile / About Me</summary>
+        <div class="card-body">
+          <div class="field">
+            <label for="profile">Profile / About Me</label>
+            <textarea class="text-input" id="profile" data-bind="profile" rows="5"
+                      placeholder="Write a concise professional summary..."></textarea>
+          </div>
+          <label class="switch" for="showProfile">
+            <input type="checkbox" id="showProfile" data-bind="showProfile">
+            <span>Show Profile</span>
+          </label>
+          <label class="switch" for="justifyProfile">
+            <input type="checkbox" id="justifyProfile" data-bind="justifyProfile">
+            <span>Justify Profile Text</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-skills" open>
+        <summary>Skills</summary>
+        <div class="card-body">
+          <p class="hint">
+            Group your skills into categories &mdash; for example
+            <strong>Languages</strong>, <strong>Computer Skills</strong>, <strong>Others</strong>.
+          </p>
+
+          <div id="skillCategories"></div>
+
+          <button type="button" class="btn btn-block" id="btnAddCategory">+ Add Category</button>
+
+          <label class="switch" for="showSkills">
+            <input type="checkbox" id="showSkills" data-bind="showSkills">
+            <span>Show Skills</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-experience" open>
+        <summary>Experience</summary>
+        <div class="card-body">
+          <div id="experienceList"></div>
+          <button type="button" class="btn btn-block" id="btnAddExperience">+ Add Experience</button>
+          <label class="switch" for="showExperience">
+            <input type="checkbox" id="showExperience" data-bind="showExperience">
+            <span>Show Experience</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-education" open>
+        <summary>Education</summary>
+        <div class="card-body">
+          <div id="educationList"></div>
+          <button type="button" class="btn btn-block" id="btnAddEducation">+ Add Education</button>
+          <label class="switch" for="showEducation">
+            <input type="checkbox" id="showEducation" data-bind="showEducation">
+            <span>Show Education</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-certificates" open>
+        <summary>Certificates</summary>
+        <div class="card-body">
+          <div id="certificateList"></div>
+          <button type="button" class="btn btn-block" id="btnAddCertificate">+ Add Certificate</button>
+          <label class="switch" for="showCertificates">
+            <input type="checkbox" id="showCertificates" data-bind="showCertificates">
+            <span>Show Certificates</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-references" open>
+        <summary>References</summary>
+        <div class="card-body">
+          <div id="referenceList"></div>
+          <button type="button" class="btn btn-block" id="btnAddReference">+ Add Reference</button>
+          <label class="switch" for="showReferences">
+            <input type="checkbox" id="showReferences" data-bind="showReferences">
+            <span>Show References</span>
+          </label>
+        </div>
+      </details>
+
+      <details class="card" id="sec-toggles" open>
+        <summary>Resume Sections</summary>
+        <div class="card-body">
+          <p class="hint">
+            Turn sections on or off. Disabled sections are removed from the preview, the PDF and printing.
+          </p>
+          <div class="toggle-grid">
+            <label class="switch"><input type="checkbox" data-bind="showPhoto"><span>Photo</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showJobTitle"><span>Job Title</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showContactNumber"><span>Contact Number</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showEmail"><span>Email</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showLinkedin"><span>LinkedIn</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showPortfolio"><span>Online Portfolio</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showProfile"><span>Profile</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showSkills"><span>Skills</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showExperience"><span>Experience</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showEducation"><span>Education</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showCertificates"><span>Certificates</span></label>
+            <label class="switch"><input type="checkbox" data-bind="showReferences"><span>References</span></label>
+          </div>
+        </div>
+      </details>
+
+    </form>
+  </section>
+
+  <!-- =========================================================
+       PREVIEW COLUMN
+       ========================================================= -->
+  <section class="preview-col" aria-label="Resume preview">
+    <div class="preview-toolbar">
+      <h2 class="preview-title">Live Preview</h2>
+      <span class="preview-badge" id="paperBadge">A4 &middot; 210 &times; 297 mm</span>
+    </div>
+
+    <div class="preview-viewport" id="previewViewport">
+      <div class="preview-stage" id="previewStage">
+        <div class="preview-scaler" id="previewScaler">
+          <div class="resume-page" id="resumePage"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- =========================================================
+     FOOTER / PRIVACY & ATTRIBUTION
+     ========================================================= -->
+<footer class="app-footer">
+  <p class="privacy-note">Privacy note: Your resume data is saved automatically in this browser's local storage. Export a PDF backup if you need to keep your data elsewhere.</p>
+  <div class="footer-links">
+    <span class="creator-attribution">Built by Renzo Lazarte</span>
+    <span class="footer-separator" aria-hidden="true">&middot;</span>
+    <a href="#" target="_blank" rel="noopener noreferrer" class="footer-link footer-link-portfolio">Portfolio</a>
+    <span id="supportLinkContainer">
+      <span class="footer-separator" aria-hidden="true">&middot;</span>
+      <button type="button" class="footer-link" id="btnSupport">Support this free tool</button>
+    </span>
+  </div>
+</footer>
+
+<!-- =========================================================
+     CLEAR CONFIRMATION MODAL
+     ========================================================= -->
+<dialog class="app-modal" id="clearModal" aria-labelledby="clearModalTitle" aria-describedby="clearModalDesc">
+  <div class="modal-content">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <div class="modal-title-group">
+          <h3 class="modal-title" id="clearModalTitle">Clear this resume?</h3>
+          <p class="modal-subtitle">Confirmation required</p>
+        </div>
+      </div>
+      <div class="modal-body" id="clearModalDesc">
+        <p>This will remove all information from your current resume saved in this browser. This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btnCancelClear">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnConfirmClear">Clear Resume</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- =========================================================
+     SUPPORT MODAL
+     ========================================================= -->
+<dialog class="app-modal" id="supportModal" aria-labelledby="supportModalTitle" aria-describedby="supportModalDesc">
+  <div class="modal-content">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <div class="modal-title-group">
+          <h3 class="modal-title" id="supportModalTitle">A little support goes a long way</h3>
+          <p class="modal-subtitle">From Renzo, the developer behind Build A Resume.</p>
+        </div>
+      </div>
+      <div class="modal-body" id="supportModalDesc">
+        <p>If this free tool helped you create your resume, you can support its continued development with a small voluntary contribution.</p>
+        
+        <div class="donation-qr-wrap" id="donationQrWrap" hidden>
+          <img src="" alt="GCash Donation QR Code" class="donation-qr" id="donationQrImg">
+          <p class="qr-instruction">Scan to support Build A Resume</p>
+        </div>
+
+        <p class="support-footer-text">No pressure at all. Thank you for using my project!</p>
+
+        <label class="switch" style="margin-top: 16px; display: flex; align-items: flex-start;">
+          <input type="checkbox" id="hideSupportUntilRefresh" style="margin-top: 3px;">
+          <span style="font-size: 12.5px;">Don't show again until I refresh this page</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btnCloseSupportModal">Maybe later</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- =========================================================
+     FLOATING DONATION CHAT HEAD
+     ========================================================= -->
+<div class="donation-widget" id="donationWidget" hidden>
+  <div class="donation-bubble" id="donationBubble" hidden>
+    <button type="button" class="bubble-close" id="btnCloseBubble" aria-label="Dismiss message">&times;</button>
+    <button type="button" class="bubble-content" id="btnBubbleContent">
+      Hey! Enjoying this free resume builder? If you'd like to support future updates, you can scan my GCash QR. Totally optional — thanks for being here!
+    </button>
+  </div>
+    <button type="button" class="donation-chat-head" id="btnChatHead" aria-label="Open creator support message">
+    <img src="avatar.jpg" alt="" aria-hidden="true" class="chat-head-avatar">
+  </button>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =========================================================
+     CONSTANTS
+     ========================================================= */
+  var STORAGE_KEY = 'resumeBuilder.v6';
+  var THEME_KEY = 'resumeBuilder.theme';
+
+  // Portfolio & Donation Configuration
+  var CREATOR_PORTFOLIO_URL = 'https://renzolazarte.freedev.app/';
+  var DONATION_QR_PATH = 'gcash.jpg';
+
+  var PAPER_SIZES = {
+    a4:     { cssSize: 'A4',     pdfFormat: 'a4',     badge: 'A4 \u00B7 210 \u00D7 297 mm' },
+    letter: { cssSize: 'Letter', pdfFormat: 'letter', badge: 'Letter \u00B7 8.5 \u00D7 11 in' },
+    legal:  { cssSize: 'Legal',  pdfFormat: 'legal',  badge: 'Legal \u00B7 8.5 \u00D7 14 in' },
+    a3:     { cssSize: 'A3',     pdfFormat: 'a3',     badge: 'A3 \u00B7 297 \u00D7 420 mm' }
+  };
+
+  var DEFAULT_PAPER = 'a4';
+
+  /* =========================================================
+     HELPERS
+     ========================================================= */
+  function $(selector, root) {
+    return (root || document).querySelector(selector);
+  }
+  function $$(selector, root) {
+    return Array.prototype.slice.call((root || document).querySelectorAll(selector));
+  }
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = text;
+    return node;
+  }
+  function sanitizeUrl(value) {
+    var raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^mailto:|^tel:/i.test(raw)) return raw;
+    if (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(raw)) return 'https://' + raw;
+    return '';
+  }
+  function prettyUrl(value) {
+    return String(value || '')
+      .trim()
+      .replace(/^https?:\/\//i, '')
+      .replace(/^www\./i, '')
+      .replace(/\/+$/, '');
+  }
+  function showToast(message, duration) {
+    var container = $('#toastContainer');
+    if (!container) return;
+    var toast = el('div', 'toast', message);
+    container.appendChild(toast);
+    void toast.offsetWidth; // Trigger reflow
+    toast.classList.add('is-visible');
+    setTimeout(function () {
+      toast.classList.remove('is-visible');
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, duration || 4000);
+  }
+
+  /* =========================================================
+     STATE
+     ========================================================= */
+  function emptyState() {
+    return {
+      paperSize: DEFAULT_PAPER,
+
+      fullName: '',
+      jobTitle: '',
+      showJobTitle: true,
+      centerHeader: true,
+
+      photo: '',
+      showPhoto: true,
+
+      contactNumber: '',
+      showContactNumber: true,
+
+      email: '',
+      showEmail: true,
+
+      linkedin: '',
+      showLinkedin: true,
+
+      portfolio: '',
+      showPortfolio: true,
+
+      profile: '',
+      showProfile: true,
+      justifyProfile: false,
+
+      skills: [],
+      showSkills: true,
+
+      experience: [],
+      showExperience: true,
+
+      education: [],
+      showEducation: true,
+
+      certificates: [],
+      showCertificates: true,
+
+      references: [],
+      showReferences: true
+    };
+  }
+
+  function sampleState() {
+    return {
+      paperSize: DEFAULT_PAPER,
+
+      fullName: 'Renzo Lazarte',
+      jobTitle: 'Junior Web Developer',
+      showJobTitle: true,
+      centerHeader: true,
+
+      photo: '',
+      showPhoto: true,
+
+      contactNumber: '',
+      showContactNumber: true,
+
+      email: 'renzolazarte@gmail.com',
+      showEmail: true,
+
+      linkedin: '',
+      showLinkedin: true,
+
+      portfolio: '',
+      showPortfolio: true,
+
+      profile:
+        'Detail-oriented Junior Web Developer with a passion for creating clean, accessible, and responsive web applications. Proficient in HTML, CSS, and JavaScript, with a growing understanding of modern frameworks. Eager to contribute to a dynamic team and continue developing professional skills in a collaborative environment.',
+
+      showProfile: true,
+      justifyProfile: false,
+
+      skills: [
+        { category: 'Languages', items: ['JavaScript', 'HTML5', 'CSS3'] },
+        { category: 'Tools', items: ['Git', 'VS Code', 'Figma'] },
+        { category: 'Soft Skills', items: ['Problem Solving', 'Communication', 'Teamwork'] }
+      ],
+      showSkills: true,
+
+      experience: [
+        {
+          position: 'Web Development Intern (Demo)',
+          company: 'Tech Solutions Inc.',
+          year: '2023 - 2024',
+          description:
+            'Assisted in developing and maintaining responsive web interfaces. Collaborated with senior developers to debug frontend issues and improved page load speeds by optimizing assets.'
+        }
+      ],
+      showExperience: true,
+
+      education: [
+        {
+          school: 'State University (Demo)',
+          degree: 'B.S. in Computer Science',
+          location: 'Anytown, USA',
+          start: '2020',
+          end: '2024',
+          description: 'Relevant coursework: Web Development, Data Structures, UI/UX Design.'
+        }
+      ],
+      showEducation: true,
+
+      certificates: [
+        {
+          name: 'Frontend Development Certification (Demo)',
+          institution: 'Online Learning Platform',
+          year: '2023',
+          description: 'Comprehensive certification covering modern JavaScript, responsive design, and web accessibility.'
+        }
+      ],
+      showCertificates: true,
+
+      references: [],
+      showReferences: true
+    };
+  }
+
+  function normalizeSkills(raw) {
+    if (!Array.isArray(raw)) return [];
+    var allStrings = raw.length > 0 &&
+                     raw.every(function (x) { return typeof x === 'string'; });
+    if (allStrings) {
+      return [{ category: 'Skills', items: raw.slice() }];
+    }
+    return raw.map(function (item) {
+      if (item && typeof item === 'object') {
+        return {
+          category: (item.category == null) ? '' : String(item.category),
+          items: Array.isArray(item.items)
+            ? item.items.map(function (s) { return String(s == null ? '' : s); })
+            : []
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
+  function normalize(raw) {
+    var base = emptyState();
+    if (!raw || typeof raw !== 'object') return base;
+
+    base.skills = normalizeSkills(raw.skills);
+
+    Object.keys(base).forEach(function (key) {
+      if (key === 'skills') return;
+
+      var fallback = base[key];
+      var value = raw[key];
+
+      if (Array.isArray(fallback)) {
+        if (Array.isArray(value)) {
+          base[key] = value.map(function (item) {
+            if (item && typeof item === 'object') return Object.assign({}, item);
+            return String(item == null ? '' : item);
+          });
+        } else {
+          base[key] = [];
+        }
+      } else if (typeof fallback === 'boolean') {
+        base[key] = typeof value === 'boolean' ? value : fallback;
+      } else {
+        base[key] = (value == null) ? '' : String(value);
+      }
+    });
+
+    if (!PAPER_SIZES[base.paperSize]) {
+      base.paperSize = DEFAULT_PAPER;
+    }
+
+    return base;
+  }
+
+  // Start with an empty resume by default for first-time visitors.
+  var state = loadState() || emptyState();
+
+  /* =========================================================
+     PERSISTENCE & SAVE STATUS
+     ========================================================= */
+  var saveTimer = null;
+
+  function setSaveStatus(status) {
+    var node = $('#saveStatus');
+    if (!node) return;
+    var labels = { saved: 'Saved', saving: 'Saving\u2026', error: 'Not saved' };
+    node.dataset.status = status;
+    node.textContent = labels[status] || 'Saved';
+    node.setAttribute('aria-label', labels[status] || 'Saved');
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setSaveStatus('saved');
+    } catch (err) {
+      setSaveStatus('error');
+    }
+  }
+
+  function scheduleSave() {
+    setSaveStatus('saving');
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveState, 350);
+  }
+
+  function cancelPendingSave() {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return normalize(JSON.parse(raw));
+    } catch (err) { return null; }
+  }
+
+  /* =========================================================
+     THEME MANAGEMENT
+     ========================================================= */
+  function getSavedTheme() {
+    try {
+      var t = localStorage.getItem(THEME_KEY);
+      return (t === 'light' || t === 'dark') ? t : null;
+    } catch (e) { return null; }
+  }
+
+  function getSystemTheme() {
+    try {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch (e) { return 'light'; }
+  }
+
+  function applyTheme(theme, persist) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, theme); } catch (e) { /* ignore */ }
+    }
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#0a0a0a' : '#ffffff');
+    var toggle = $('#themeToggle');
+    if (toggle) {
+      var next = theme === 'dark' ? 'light' : 'dark';
+      var label = 'Switch to ' + next + ' mode';
+      toggle.setAttribute('aria-label', label);
+      toggle.setAttribute('title', label);
+    }
+  }
+
+  function setupTheme() {
+    var initial = getSavedTheme() || getSystemTheme();
+    applyTheme(initial, false);
+
+    if (!getSavedTheme()) {
+      try {
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+        var onChange = function (event) {
+          if (!getSavedTheme()) {
+            applyTheme(event.matches ? 'dark' : 'light', false);
+          }
+        };
+        if (mq.addEventListener) mq.addEventListener('change', onChange);
+        else if (mq.addListener) mq.addListener(onChange);
+      } catch (e) { /* ignore */ }
+    }
+
+    var toggle = $('#themeToggle');
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        var current = document.documentElement.getAttribute('data-theme');
+        var next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next, true);
+      });
+    }
+  }
+
+  /* =========================================================
+     MOBILE EDIT / PREVIEW SWITCH
+     ========================================================= */
+  function setMobileView(view) {
+    document.body.dataset.view = view;
+    $$('.view-tab').forEach(function (tab) {
+      var active = tab.dataset.view === view;
+      tab.classList.toggle('is-active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (view === 'preview') setTimeout(updateScale, 60);
+  }
+
+  function setupMobileView() {
+    $$('.view-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        setMobileView(tab.dataset.view);
+      });
+    });
+  }
+
+  /* =========================================================
+     SECTION NAVIGATION
+     ========================================================= */
+  function setActiveSection(id) {
+    $$('.section-link').forEach(function (link) {
+      var isActive = link.getAttribute('href') === '#' + id;
+      link.classList.toggle('is-active', isActive);
+      if (isActive) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  function closeMobileNav() {
+    var nav = $('#sectionNav');
+    var toggle = $('#mobileMenuToggle');
+    if (nav) nav.classList.remove('is-open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function setupNavigation() {
+    $$('.section-link').forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        event.preventDefault();
+
+        var href = link.getAttribute('href');
+        var target = document.querySelector(href);
+        if (!target) return;
+
+        var isMobile = window.matchMedia('(max-width: 1080px)').matches;
+
+        if (isMobile && document.body.dataset.view !== 'edit') {
+          setMobileView('edit');
+        }
+
+        if (target.tagName === 'DETAILS' && !target.open) {
+          target.open = true;
+        }
+
+        requestAnimationFrame(function () {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveSection(target.id);
+          closeMobileNav();
+        });
+      });
+    });
+
+    var mobileToggle = $('#mobileMenuToggle');
+    if (mobileToggle) {
+      mobileToggle.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var nav = $('#sectionNav');
+        if (!nav) return;
+        var isOpen = nav.classList.toggle('is-open');
+        mobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    }
+
+    document.addEventListener('click', function (event) {
+      var nav = $('#sectionNav');
+      var toggle = $('#mobileMenuToggle');
+      if (!nav || !nav.classList.contains('is-open')) return;
+      if (nav.contains(event.target) || (toggle && toggle.contains(event.target))) return;
+      closeMobileNav();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') closeMobileNav();
+    });
+
+    window.addEventListener('resize', function () {
+      if (!window.matchMedia('(max-width: 1080px)').matches) {
+        closeMobileNav();
+      }
+    });
+
+    var cards = $$('details.card');
+    var ticking = false;
+    function updateActiveOnScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        ticking = false;
+        var offset = 110;
+        var active = null;
+        cards.forEach(function (card) {
+          var rect = card.getBoundingClientRect();
+          if (rect.top <= offset + 40) active = card;
+        });
+        if (active) {
+          setActiveSection(active.id);
+        }
+      });
+    }
+    window.addEventListener('scroll', updateActiveOnScroll, { passive: true });
+  }
+
+  /* =========================================================
+     MORE-ACTIONS DROPDOWN
+     ========================================================= */
+  function setupMoreMenu() {
+    var toggle = $('#moreMenuToggle');
+    var menu = $('#moreMenu');
+    if (!toggle || !menu) return;
+
+    function close() {
+      menu.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    function open() {
+      menu.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
+      var first = menu.querySelector('button');
+      if (first) first.focus();
+    }
+
+    toggle.addEventListener('click', function (event) {
+      event.stopPropagation();
+      if (menu.hidden) open(); else close();
+    });
+
+    document.addEventListener('click', function (event) {
+      if (menu.hidden) return;
+      if (!menu.contains(event.target) && event.target !== toggle && !toggle.contains(event.target)) {
+        close();
+      }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && !menu.hidden) {
+        close();
+        toggle.focus();
+      }
+    });
+
+    menu.addEventListener('focusout', function () {
+      if (menu.hidden) return;
+      setTimeout(function () {
+        if (menu.hidden) return;
+        if (menu.contains(document.activeElement)) return;
+        if (document.activeElement === toggle) return;
+        close();
+      }, 0);
+    });
+
+    menu.addEventListener('click', function (event) {
+      if (event.target.closest('button')) close();
+    });
+  }
+
+  /* =========================================================
+     STATIC CONTROL BINDING
+     ========================================================= */
+  function bindStaticControls() {
+    $$('[data-bind]').forEach(function (node) {
+      var key = node.dataset.bind;
+      var type = (node.type || '').toLowerCase();
+      var tag = (node.tagName || '').toLowerCase();
+
+      var isCheckbox = type === 'checkbox';
+      var isSelect = tag === 'select';
+      var eventName = (isCheckbox || isSelect) ? 'change' : 'input';
+
+      node.addEventListener(eventName, function () {
+        state[key] = isCheckbox ? node.checked : node.value;
+        syncControls();
+        onStateChange();
+      });
+    });
+  }
+
+  function syncControls(force) {
+    $$('[data-bind]').forEach(function (node) {
+      var key = node.dataset.bind;
+      var value = state[key];
+      var type = (node.type || '').toLowerCase();
+
+      if (type === 'checkbox') {
+        node.checked = !!value;
+      } else if (force || document.activeElement !== node) {
+        node.value = (value == null) ? '' : value;
+      }
+    });
+  }
+
+  /* =========================================================
+     GENERIC FIELD BUILDER
+     ========================================================= */
+  var fieldUid = 0;
+
+  function makeField(labelText, type, value, placeholder, onChange, rows) {
+    var id = 'fld-' + (++fieldUid);
+    var wrap = el('div', 'field');
+
+    var label = el('label', null, labelText);
+    label.setAttribute('for', id);
+
+    var input;
+    if (type === 'textarea') {
+      input = el('textarea', 'text-input');
+      input.rows = rows || 3;
+    } else {
+      input = el('input', 'text-input');
+      input.type = type;
+    }
+
+    input.id = id;
+    input.value = (value == null) ? '' : value;
+    if (placeholder) input.placeholder = placeholder;
+
+    input.addEventListener('input', function () {
+      onChange(input.value);
+      onStateChange();
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function makeRemoveButton(text, onClick) {
+    var btn = el('button', 'btn btn-sm btn-danger', text);
+    btn.type = 'button';
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  /* =========================================================
+     PHOTO HANDLING
+     ========================================================= */
+  var PHOTO_SIZE = 400;
+  var PHOTO_QUALITY = 0.85;
+
+  function processImageFile(file, callback) {
+    var reader = new FileReader();
+
+    reader.onload = function (event) {
+      var img = new Image();
+
+      img.onload = function () {
+        try {
+          var canvas = document.createElement('canvas');
+          canvas.width = PHOTO_SIZE;
+          canvas.height = PHOTO_SIZE;
+
+          var ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, PHOTO_SIZE, PHOTO_SIZE);
+
+          var side = Math.min(img.naturalWidth || img.width, img.naturalHeight || img.height);
+          var sx = Math.floor(((img.naturalWidth || img.width) - side) / 2);
+          var sy = Math.floor(((img.naturalHeight || img.height) - side) / 2);
+
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
+
+          callback(canvas.toDataURL('image/jpeg', PHOTO_QUALITY));
+        } catch (err) {
+          if (window.console && console.error) {
+            console.error('Image processing failed:', err);
+          }
+          callback(null);
+        }
+      };
+
+      img.onerror = function () { callback(null); };
+      img.src = event.target.result;
+    };
+
+    reader.onerror = function () { callback(null); };
+    reader.readAsDataURL(file);
+  }
+
+  function renderPhotoControls() {
+    var row = $('#photoRow');
+    var thumb = $('#photoThumb');
+    var input = $('#photoInput');
+
+    var hasPhoto = !!(state.photo && String(state.photo).trim());
+
+    if (row) row.hidden = !hasPhoto;
+    if (thumb) {
+      if (hasPhoto) {
+        thumb.src = state.photo;
+      } else {
+        thumb.removeAttribute('src');
+      }
+    }
+    if (input && !hasPhoto) { input.value = ''; }
+  }
+
+  function bindPhotoControls() {
+    var input = $('#photoInput');
+    var removeBtn = $('#btnRemovePhoto');
+
+    if (input) {
+      input.addEventListener('change', function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+
+        if (!/^image\//i.test(file.type)) {
+          window.alert('Please choose a valid image file (JPG, PNG, WEBP\u2026).');
+          input.value = '';
+          return;
+        }
+
+        processImageFile(file, function (dataUrl) {
+          if (!dataUrl) {
+            window.alert('Sorry, that image could not be processed.');
+            input.value = '';
+            return;
+          }
+          state.photo = dataUrl;
+          state.showPhoto = true;
+          syncControls();
+          renderPhotoControls();
+          onStateChange();
+        });
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        if (!state.photo) return;
+        if (!window.confirm('Remove the uploaded photo?')) return;
+        state.photo = '';
+        renderPhotoControls();
+        onStateChange();
+      });
+    }
+  }
+
+  /* =========================================================
+     SKILLS EDITOR
+     ========================================================= */
+  function autoSizeChip(input) {
+    var len = Math.max(input.value.length, (input.placeholder || '').length);
+    input.style.width = Math.min(Math.max(len * 8 + 16, 70), 240) + 'px';
+  }
+
+  function renderSkillsEditor() {
+    var wrap = $('#skillCategories');
+    if (!wrap) return;
+    wrap.textContent = '';
+
+    state.skills.forEach(function (group, groupIndex) {
+      if (!Array.isArray(group.items)) group.items = [];
+
+      var card = el('div', 'entry-card');
+
+      var head = el('div', 'entry-card-head');
+      head.appendChild(el('span', 'entry-card-title', 'Category ' + (groupIndex + 1)));
+      head.appendChild(makeRemoveButton('Remove Category', function () {
+        state.skills.splice(groupIndex, 1);
+        renderSkillsEditor();
+        onStateChange();
+      }));
+      card.appendChild(head);
+
+      card.appendChild(makeField(
+        'Category Name', 'text', group.category,
+        'e.g. Technical Skills',
+        function (v) { group.category = v; }
+      ));
+
+      card.appendChild(el('label', 'chip-label', 'Skills in this category'));
+
+      var chipList = el('ul', 'chip-list');
+
+      group.items.forEach(function (skill, itemIndex) {
+        var li = el('li', 'chip');
+
+        var input = el('input', 'chip-input');
+        input.type = 'text';
+        input.value = skill;
+        input.placeholder = 'Skill';
+        input.setAttribute('aria-label',
+          'Skill ' + (itemIndex + 1) + ' in category ' + (groupIndex + 1));
+
+        input.addEventListener('input', function () {
+          group.items[itemIndex] = input.value;
+          autoSizeChip(input);
+          onStateChange();
+        });
+        autoSizeChip(input);
+
+        var remove = el('button', 'chip-remove', '\u00D7');
+        remove.type = 'button';
+        remove.title = 'Remove skill';
+        remove.setAttribute('aria-label',
+          'Remove skill ' + (skill || (itemIndex + 1)) +
+          ' from category ' + (groupIndex + 1));
+        remove.addEventListener('click', function () {
+          group.items.splice(itemIndex, 1);
+          renderSkillsEditor();
+          onStateChange();
+        });
+
+        li.appendChild(input);
+        li.appendChild(remove);
+        chipList.appendChild(li);
+      });
+
+      card.appendChild(chipList);
+
+      var addRow = el('div', 'inline-add');
+
+      var addInput = el('input', 'text-input');
+      addInput.type = 'text';
+      addInput.placeholder = 'e.g. JavaScript';
+      addInput.setAttribute('aria-label',
+        'New skill for category ' + (groupIndex + 1));
+
+      var addBtn = el('button', 'btn', 'Add Skill');
+      addBtn.type = 'button';
+      addBtn.setAttribute('aria-label',
+        'Add skill to category ' + (groupIndex + 1));
+
+      function commitAdd() {
+        var value = addInput.value.trim();
+        if (!value) { addInput.focus(); return; }
+        group.items.push(value);
+        renderSkillsEditor();
+        onStateChange();
+        var cards = $$('#skillCategories .entry-card');
+        var freshCard = cards[groupIndex];
+        if (freshCard) {
+          var freshAdd = freshCard.querySelector('.inline-add .text-input');
+          if (freshAdd) freshAdd.focus();
+        }
+      }
+
+      addBtn.addEventListener('click', commitAdd);
+      addInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          commitAdd();
+        }
+      });
+
+      addRow.appendChild(addInput);
+      addRow.appendChild(addBtn);
+      card.appendChild(addRow);
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function addSkillCategory() {
+    state.skills.push({ category: '', items: [] });
+    renderSkillsEditor();
+    onStateChange();
+
+    var cards = $$('#skillCategories .entry-card');
+    var last = cards[cards.length - 1];
+    if (last) {
+      var nameInput = last.querySelector('.field .text-input');
+      if (nameInput) nameInput.focus();
+    }
+  }
+
+  /* =========================================================
+     EXPERIENCE EDITOR
+     ========================================================= */
+  function renderExperienceEditor() {
+    var wrap = $('#experienceList');
+    if (!wrap) return;
+    wrap.textContent = '';
+
+    state.experience.forEach(function (item, index) {
+      var card = el('div', 'entry-card');
+
+      var head = el('div', 'entry-card-head');
+      head.appendChild(el('span', 'entry-card-title', 'Experience ' + (index + 1)));
+      head.appendChild(makeRemoveButton('Remove Experience', function () {
+        state.experience.splice(index, 1);
+        renderExperienceEditor();
+        onStateChange();
+      }));
+      card.appendChild(head);
+
+      card.appendChild(makeField(
+        'Position', 'text', item.position,
+        'Job Title',
+        function (v) { item.position = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Company / Institution', 'text', item.company,
+        'Company Name',
+        function (v) { item.company = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Year', 'text', item.year,
+        'e.g. 2023 - 2024',
+        function (v) { item.year = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Description', 'textarea', item.description,
+        'Describe your responsibilities and key achievements\u2026',
+        function (v) { item.description = v; }, 4
+      ));
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function addExperience() {
+    state.experience.push({ position: '', company: '', year: '', description: '' });
+    renderExperienceEditor();
+    onStateChange();
+    focusLastEntry('#experienceList');
+  }
+
+  /* =========================================================
+     EDUCATION EDITOR
+     ========================================================= */
+  function renderEducationEditor() {
+    var wrap = $('#educationList');
+    if (!wrap) return;
+    wrap.textContent = '';
+
+    state.education.forEach(function (item, index) {
+      var card = el('div', 'entry-card');
+
+      var head = el('div', 'entry-card-head');
+      head.appendChild(el('span', 'entry-card-title', 'Education ' + (index + 1)));
+      head.appendChild(makeRemoveButton('Remove Education', function () {
+        state.education.splice(index, 1);
+        renderEducationEditor();
+        onStateChange();
+      }));
+      card.appendChild(head);
+
+      card.appendChild(makeField(
+        'School / Institution', 'text', item.school,
+        'University or School Name',
+        function (v) { item.school = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Degree / Program', 'text', item.degree,
+        'Degree or Program Name',
+        function (v) { item.degree = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Location', 'text', item.location,
+        'City, State',
+        function (v) { item.location = v; }
+      ));
+
+      var row = el('div', 'field-row');
+      row.appendChild(makeField(
+        'Start Date', 'text', item.start, 'e.g. 2020',
+        function (v) { item.start = v; }
+      ));
+      row.appendChild(makeField(
+        'End Date / Present', 'text', item.end, 'e.g. 2024',
+        function (v) { item.end = v; }
+      ));
+      card.appendChild(row);
+
+      card.appendChild(makeField(
+        'Description (optional)', 'textarea', item.description,
+        'Relevant coursework, honors, or activities\u2026',
+        function (v) { item.description = v; }, 3
+      ));
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function addEducation() {
+    state.education.push({
+      school: '', degree: '', location: '', start: '', end: '', description: ''
+    });
+    renderEducationEditor();
+    onStateChange();
+    focusLastEntry('#educationList');
+  }
+
+  /* =========================================================
+     CERTIFICATES EDITOR
+     ========================================================= */
+  function renderCertificatesEditor() {
+    var wrap = $('#certificateList');
+    if (!wrap) return;
+    wrap.textContent = '';
+
+    state.certificates.forEach(function (item, index) {
+      var card = el('div', 'entry-card');
+
+      var head = el('div', 'entry-card-head');
+      head.appendChild(el('span', 'entry-card-title', 'Certificate ' + (index + 1)));
+      head.appendChild(makeRemoveButton('Remove Certificate', function () {
+        state.certificates.splice(index, 1);
+        renderCertificatesEditor();
+        onStateChange();
+      }));
+      card.appendChild(head);
+
+      card.appendChild(makeField(
+        'Name / Title', 'text', item.name,
+        'Certificate Name',
+        function (v) { item.name = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Company / Institution', 'text', item.institution,
+        'Issuing Organization',
+        function (v) { item.institution = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Year', 'text', item.year,
+        'e.g. 2023',
+        function (v) { item.year = v; }
+      ));
+
+      card.appendChild(makeField(
+        'Description (optional)', 'textarea', item.description,
+        'Brief description of the certification or skills covered\u2026',
+        function (v) { item.description = v; }, 3
+      ));
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function addCertificate() {
+    state.certificates.push({ name: '', institution: '', year: '', description: '' });
+    renderCertificatesEditor();
+    onStateChange();
+    focusLastEntry('#certificateList');
+  }
+
+  /* =========================================================
+     REFERENCES EDITOR
+     ========================================================= */
+  function renderReferencesEditor() {
+    var wrap = $('#referenceList');
+    if (!wrap) return;
+    wrap.textContent = '';
+
+    state.references.forEach(function (item, index) {
+      var card = el('div', 'entry-card');
+
+      var head = el('div', 'entry-card-head');
+      head.appendChild(el('span', 'entry-card-title', 'Reference ' + (index + 1)));
+      head.appendChild(makeRemoveButton('Remove Reference', function () {
+        state.references.splice(index, 1);
+        renderReferencesEditor();
+        onStateChange();
+      }));
+      card.appendChild(head);
+
+      card.appendChild(makeField(
+        'Reference Name', 'text', item.name,
+        'Reference Name',
+        function (v) { item.name = v; }
+      ));
+
+      var row = el('div', 'field-row');
+      row.appendChild(makeField(
+        'Position', 'text', item.position, 'Position',
+        function (v) { item.position = v; }
+      ));
+      row.appendChild(makeField(
+        'Company', 'text', item.company, 'Company',
+        function (v) { item.company = v; }
+      ));
+      card.appendChild(row);
+
+      card.appendChild(makeField(
+        'Contact Number', 'tel', item.contact,
+        'Enter phone number',
+        function (v) { item.contact = v; }
+      ));
+
+      wrap.appendChild(card);
+    });
+  }
+
+  function addReference() {
+    state.references.push({ name: '', position: '', company: '', contact: '' });
+    renderReferencesEditor();
+    onStateChange();
+    focusLastEntry('#referenceList');
+  }
+
+  function focusLastEntry(containerSelector) {
+    var cards = $$(containerSelector + ' .entry-card');
+    if (!cards.length) return;
+    var input = cards[cards.length - 1].querySelector('input, textarea');
+    if (input) input.focus();
+  }
+
+  /* =========================================================
+     PREVIEW RENDERING
+     ========================================================= */
+  function buildSection(title, nodes) {
+    var section = el('section', 'r-section');
+    section.appendChild(el('h2', 'r-h2', title));
+    nodes.forEach(function (node) { section.appendChild(node); });
+    return section;
+  }
+
+  function getContactEntries() {
+    var entries = [];
+
+    if (state.showContactNumber && String(state.contactNumber).trim()) {
+      var phone = String(state.contactNumber).trim();
+      entries.push({ text: phone, href: 'tel:' + phone.replace(/[^\d+]/g, '') });
+    }
+    if (state.showEmail && String(state.email).trim()) {
+      var mail = String(state.email).trim();
+      entries.push({ text: mail, href: 'mailto:' + mail });
+    }
+    if (state.showLinkedin && String(state.linkedin).trim()) {
+      var li = String(state.linkedin).trim();
+      entries.push({ text: prettyUrl(li), href: sanitizeUrl(li) });
+    }
+    if (state.showPortfolio && String(state.portfolio).trim()) {
+      var pf = String(state.portfolio).trim();
+      entries.push({ text: prettyUrl(pf), href: sanitizeUrl(pf) });
+    }
+
+    return entries;
+  }
+
+  function getSkillGroups() {
+    return state.skills.map(function (g) {
+      return {
+        category: String((g && g.category) || '').trim(),
+        items: ((g && g.items) || [])
+          .map(function (s) { return String(s || '').trim(); })
+          .filter(Boolean)
+      };
+    }).filter(function (g) {
+      return g.items.length > 0;
+    });
+  }
+
+  function formatRange(start, end) {
+    var a = String(start || '').trim();
+    var b = String(end || '').trim();
+    if (a && b) return a + ' \u2013 ' + b;
+    return a || b || '';
+  }
+
+  function buildExperienceEntry(item) {
+    var position = String(item.position || '').trim();
+    var company = String(item.company || '').trim();
+    var year = String(item.year || '').trim();
+    var description = String(item.description || '').trim();
+
+    if (!position && !company && !year && !description) return null;
+
+    var entry = el('div', 'r-entry');
+    entry.appendChild(el('div', 'r-entry-title', position || company || 'Experience'));
+    if (position && company) entry.appendChild(el('div', 'r-entry-sub', company));
+    if (year) entry.appendChild(el('div', 'r-entry-meta', year));
+    if (description) entry.appendChild(el('p', 'r-entry-desc', description));
+    return entry;
+  }
+
+  function buildEducationEntry(item) {
+    var school = String(item.school || '').trim();
+    var degree = String(item.degree || '').trim();
+    var location = String(item.location || '').trim();
+    var start = String(item.start || '').trim();
+    var end = String(item.end || '').trim();
+    var description = String(item.description || '').trim();
+
+    if (!school && !degree && !location && !start && !end && !description) return null;
+
+    var entry = el('div', 'r-entry');
+    entry.appendChild(el('div', 'r-entry-title', degree || school || 'Education'));
+
+    var subParts = [];
+    if (degree && school) subParts.push(school);
+    if (location) subParts.push(location);
+    if (subParts.length) entry.appendChild(el('div', 'r-entry-sub', subParts.join(' \u2014 ')));
+
+    var range = formatRange(start, end);
+    if (range) entry.appendChild(el('div', 'r-entry-meta', range));
+
+    if (description) entry.appendChild(el('p', 'r-entry-desc', description));
+    return entry;
+  }
+
+  function buildCertificateEntry(item) {
+    var name = String(item.name || '').trim();
+    var institution = String(item.institution || '').trim();
+    var year = String(item.year || '').trim();
+    var description = String(item.description || '').trim();
+
+    if (!name && !institution && !year && !description) return null;
+
+    var entry = el('div', 'r-entry');
+    entry.appendChild(el('div', 'r-entry-title', name || 'Certificate'));
+
+    var subParts = [];
+    if (institution) subParts.push(institution);
+    if (year) subParts.push(year);
+    if (subParts.length) entry.appendChild(el('div', 'r-entry-sub', subParts.join(' \u2014 ')));
+
+    if (description) entry.appendChild(el('p', 'r-entry-desc', description));
+    return entry;
+  }
+
+  function buildReferenceEntry(item) {
+    var name = String(item.name || '').trim();
+    var position = String(item.position || '').trim();
+    var company = String(item.company || '').trim();
+    var contact = String(item.contact || '').trim();
+
+    if (!name && !position && !company && !contact) return null;
+
+    var entry = el('div', 'r-entry');
+    if (name) entry.appendChild(el('div', 'r-entry-title', name));
+
+    var role = [position, company].filter(Boolean).join(' - ');
+    if (role) entry.appendChild(el('div', 'r-entry-sub', role));
+    if (contact) entry.appendChild(el('div', 'r-entry-meta', contact));
+    return entry;
+  }
+
+  function buildSkillsNode() {
+    var groups = getSkillGroups();
+    if (!groups.length) return null;
+
+    var inline = el('div', 'r-skills');
+
+    groups.forEach(function (g) {
+      var line = el('div', 'r-skill-line');
+
+      if (g.category) {
+        line.appendChild(el('span', 'r-skill-cat', g.category + ':'));
+        line.appendChild(document.createTextNode('\u00A0'));
+      }
+
+      line.appendChild(document.createTextNode(g.items.join(', ')));
+      inline.appendChild(line);
+    });
+
+    return inline;
+  }
+
+  function renderPreview() {
+    var page = $('#resumePage');
+    if (!page) return;
+    page.textContent = '';
+
+    /* ---------- HEADER ---------- */
+    var header = el('header', 'r-header');
+    if (state.centerHeader) header.classList.add('is-centered');
+
+    var headerMain = el('div', 'r-header-main');
+
+    var hasPhoto = state.showPhoto &&
+                   state.photo &&
+                   String(state.photo).trim().length > 0;
+
+    if (hasPhoto) {
+      var photoWrap = el('div', 'r-photo-wrap');
+      var photoImg = el('img', 'r-photo');
+      photoImg.src = state.photo;
+      photoImg.alt = '';
+      photoWrap.appendChild(photoImg);
+      headerMain.appendChild(photoWrap);
+    }
+
+    var info = el('div', 'r-header-info');
+    var fullName = String(state.fullName || '').trim();
+    info.appendChild(el('h1', 'r-name', fullName || 'Your Name'));
+
+    var jobTitle = String(state.jobTitle || '').trim();
+    if (state.showJobTitle && jobTitle) {
+      info.appendChild(el('p', 'r-jobtitle', jobTitle));
+    }
+    headerMain.appendChild(info);
+
+    header.appendChild(headerMain);
+
+    var contacts = getContactEntries();
+    if (contacts.length) {
+      var contactLine = el('p', 'r-contact');
+
+      contacts.forEach(function (item, index) {
+        if (index > 0) {
+          contactLine.appendChild(el('span', 'r-sep', '\u2022'));
+        }
+
+        if (item.href) {
+          var link = el('a', 'r-contact-item r-link', item.text);
+          link.href = item.href;
+          if (/^https?:/i.test(item.href)) {
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+          }
+          contactLine.appendChild(link);
+        } else {
+          contactLine.appendChild(el('span', 'r-contact-item', item.text));
+        }
+      });
+
+      header.appendChild(contactLine);
+    }
+
+    page.appendChild(header);
+
+    /* ---------- Profile ---------- */
+    var profile = String(state.profile || '').trim();
+    if (state.showProfile && profile) {
+      var profileParagraph = el('p', 'r-text', profile);
+      if (state.justifyProfile) profileParagraph.classList.add('is-justified');
+      page.appendChild(buildSection('Profile', [profileParagraph]));
+    }
+
+    /* ---------- Skills ---------- */
+    if (state.showSkills) {
+      var skillsNode = buildSkillsNode();
+      if (skillsNode) page.appendChild(buildSection('Skills', [skillsNode]));
+    }
+
+    /* ---------- Experience ---------- */
+    if (state.showExperience) {
+      var expNodes = state.experience.map(buildExperienceEntry).filter(Boolean);
+      if (expNodes.length) page.appendChild(buildSection('Experience', expNodes));
+    }
+
+    /* ---------- Education ---------- */
+    if (state.showEducation) {
+      var eduNodes = state.education.map(buildEducationEntry).filter(Boolean);
+      if (eduNodes.length) page.appendChild(buildSection('Education', eduNodes));
+    }
+
+    /* ---------- Certificates ---------- */
+    if (state.showCertificates) {
+      var certNodes = state.certificates.map(buildCertificateEntry).filter(Boolean);
+      if (certNodes.length) page.appendChild(buildSection('Certificates', certNodes));
+    }
+
+    /* ---------- References ---------- */
+    if (state.showReferences) {
+      var refNodes = state.references.map(buildReferenceEntry).filter(Boolean);
+      if (refNodes.length) {
+        var refGrid = el('div', 'r-ref-grid');
+        for (var ri = 0; ri < refNodes.length; ri += 2) {
+          var refRow = el('div', 'r-ref-row');
+          refRow.appendChild(refNodes[ri]);
+          if (refNodes[ri + 1]) refRow.appendChild(refNodes[ri + 1]);
+          refGrid.appendChild(refRow);
+        }
+        page.appendChild(buildSection('References', [refGrid]));
+      }
+    }
+  }
+
+  /* =========================================================
+     PAPER SIZE
+     ========================================================= */
+  function applyPaperSize() {
+    var key = PAPER_SIZES[state.paperSize] ? state.paperSize : DEFAULT_PAPER;
+    if (state.paperSize !== key) state.paperSize = key;
+
+    var config = PAPER_SIZES[key];
+
+    document.body.dataset.paper = key;
+
+    var style = document.getElementById('dynamicPageStyle');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'dynamicPageStyle';
+      document.head.appendChild(style);
+    }
+    style.textContent =
+      '@media print { @page { size: ' + config.cssSize + ' portrait !important; margin: 0; } }';
+
+    var badge = $('#paperBadge');
+    if (badge) badge.textContent = config.badge;
+  }
+
+  /* =========================================================
+     PREVIEW SCALING
+     ========================================================= */
+  var scaleFrame = null;
+
+  function scheduleScaleUpdate() {
+    if (scaleFrame) cancelAnimationFrame(scaleFrame);
+    scaleFrame = requestAnimationFrame(function () {
+      scaleFrame = null;
+      updateScale();
+    });
+  }
+
+  function updateScale() {
+    if (document.body.classList.contains('is-exporting')) return;
+
+    var viewport = $('#previewViewport');
+    var stage = $('#previewStage');
+    var scaler = $('#previewScaler');
+    var paper = $('#resumePage');
+    if (!viewport || !scaler || !paper) return;
+
+    var paperWidth = paper.offsetWidth || 794;
+    var available = (stage ? stage.clientWidth : viewport.clientWidth) || paperWidth;
+    var scale = Math.min(1, available / paperWidth);
+
+    var offset = Math.max(0, (available - paperWidth * scale) / 2);
+
+    scaler.style.transform = 'translateX(' + offset + 'px) scale(' + scale + ')';
+    scaler.style.height = Math.ceil(paper.offsetHeight * scale) + 'px';
+  }
+
+  /* =========================================================
+     STATE CHANGE PIPELINE
+     ========================================================= */
+  function onStateChange() {
+    applyPaperSize();
+    renderPreview();
+    scheduleScaleUpdate();
+    scheduleSave();
+  }
+
+  function renderAll(force) {
+    syncControls(force);
+    applyPaperSize();
+    renderPhotoControls();
+    renderSkillsEditor();
+    renderExperienceEditor();
+    renderEducationEditor();
+    renderCertificatesEditor();
+    renderReferencesEditor();
+    renderPreview();
+    updateScale();
+  }
+
+  /* =========================================================
+     ACTIONS: CLEAR / DEMO
+     ========================================================= */
+  function clearResume() {
+    var modal = $('#clearModal');
+    if (modal) {
+      if (typeof modal.showModal === 'function') {
+        modal.showModal();
+      } else {
+        if (window.confirm('Clear all resume information?\n\nThis removes every field, entry and saved copy. This cannot be undone.')) {
+          performClear();
+        }
+      }
+    }
+  }
+
+  function performClear() {
+    cancelPendingSave();
+
+    state = emptyState();
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setSaveStatus('saved');
+    } catch (err) {
+      setSaveStatus('error');
+    }
+
+    renderAll(true);
+    var firstField = $('#fullName');
+    if (firstField) firstField.focus();
+  }
+
+  function loadDemo() {
+    var hasContent = String(state.fullName || '').trim() ||
+                     String(state.email || '').trim() ||
+                     state.skills.length ||
+                     state.experience.length ||
+                     state.education.length ||
+                     (state.photo && String(state.photo).trim());
+
+    if (hasContent) {
+      var ok = window.confirm('This will replace your current resume with the demo data. Are you sure?');
+      if (!ok) return;
+    }
+
+    cancelPendingSave();
+    state = sampleState();
+    renderAll(true);
+    saveState();
+    
+    showToast('Demo resume loaded. Replace the example information with your own before downloading.', 6000);
+  }
+
+  /* =========================================================
+     ACTIONS: PRINT
+     ========================================================= */
+  function printResume() {
+    window.print();
+  }
+
+  /* =========================================================
+     ACTIONS: PDF EXPORT
+     ========================================================= */
+  var exporting = false;
+
+  function setDownloadLabel(full, short) {
+    var t = $('#btnDownloadText');
+    var ts = $('#btnDownloadTextShort');
+    if (t) t.textContent = full;
+    if (ts) ts.textContent = short;
+  }
+
+  function downloadPDF() {
+    if (exporting) return;
+
+    if (typeof window.html2pdf === 'undefined') {
+      window.alert(
+        'The PDF library could not be loaded.\n\n' +
+        'Please check your internet connection and reload the page.'
+      );
+      return;
+    }
+
+    var paper = $('#resumePage');
+    var scaler = $('#previewScaler');
+    var button = $('#btnDownload');
+    if (!paper || !scaler || !button) return;
+
+    exporting = true;
+
+    var previousTransform = scaler.style.transform;
+    var previousHeight = scaler.style.height;
+
+    var safeName = String(state.fullName || '')
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '_');
+
+    var filename = (safeName ? safeName + '_' : '') + 'Resume.pdf';
+
+    var paperConfig = PAPER_SIZES[state.paperSize] || PAPER_SIZES[DEFAULT_PAPER];
+
+    button.disabled = true;
+    setDownloadLabel('Generating\u2026', '\u2026');
+
+    document.body.classList.add('is-exporting');
+    scaler.style.transform = 'none';
+    scaler.style.height = 'auto';
+
+    function finish() {
+      if (!exporting) return;
+      exporting = false;
+
+      document.body.classList.remove('is-exporting');
+      scaler.style.transform = previousTransform;
+      scaler.style.height = previousHeight;
+
+      button.disabled = false;
+      setDownloadLabel('Download PDF', 'PDF');
+
+      updateScale();
+    }
+
+    var options = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      },
+      jsPDF: {
+        unit: 'mm',
+        format: paperConfig.pdfFormat,
+        orientation: 'portrait',
+        compress: true
+      },
+      pagebreak: {
+        mode: ['css', 'legacy'],
+        avoid: ['.r-h2', '.r-header-main']
+      }
+    };
+
+    requestAnimationFrame(function () {
+      setTimeout(function () {
+        try {
+          window.html2pdf()
+            .set(options)
+            .from(paper)
+            .save()
+            .then(function () { finish(); })
+            .catch(function (err) {
+              if (window.console && console.error) {
+                console.error('PDF export failed:', err);
+              }
+              finish();
+              window.alert(
+                'Sorry, the PDF could not be generated.\n\n' +
+                'Please try again, or use "Print Resume" and choose "Save as PDF".'
+              );
+            });
+        } catch (err) {
+          if (window.console && console.error) {
+            console.error('PDF export failed:', err);
+          }
+          finish();
+          window.alert('Sorry, the PDF could not be generated. Please try again.');
+        }
+      }, 60);
+    });
+  }
+
+  /* =========================================================
+     SUPPORT MODAL & WIDGET SETUP
+     ========================================================= */
+  function setupSupportModal() {
+    var portfolioLinks = $$('.footer-link-portfolio');
+    portfolioLinks.forEach(function (link) {
+      link.href = CREATOR_PORTFOLIO_URL;
+    });
+
+    var hasQrConfig = !!DONATION_QR_PATH;
+
+    var widget = $('#donationWidget');
+    var bubble = $('#donationBubble');
+    var btnChatHead = $('#btnChatHead');
+    var btnBubbleContent = $('#btnBubbleContent');
+    var btnCloseBubble = $('#btnCloseBubble');
+    var btnSupportFooter = $('#btnSupport');
+    var supportContainer = $('#supportLinkContainer');
+    
+    var modal = $('#supportModal');
+    var btnClose = $('#btnCloseSupportModal');
+    var qrWrap = $('#donationQrWrap');
+    var qrImg = $('#donationQrImg');
+    var checkbox = $('#hideSupportUntilRefresh');
+
+    var supportDismissedThisSession = false;
+    var bubbleDismissedThisSession = false;
+    var triggerElement = null;
+
+    // Hide everything initially until we determine it's safe to show
+    if (widget) widget.hidden = true;
+    if (supportContainer) supportContainer.style.display = 'none';
+
+    if (!hasQrConfig) {
+      return; // Nothing configured
+    }
+
+    function openModal(e) {
+      triggerElement = e ? e.currentTarget : null;
+      if (typeof modal.showModal === 'function') {
+        modal.showModal();
+      }
+    }
+
+    function closeModal() {
+      if (typeof modal.close === 'function') {
+        modal.close();
+      }
+    }
+
+    if (btnChatHead) btnChatHead.addEventListener('click', openModal);
+    if (btnBubbleContent) btnBubbleContent.addEventListener('click', openModal);
+    if (btnSupportFooter) btnSupportFooter.addEventListener('click', openModal);
+
+    if (btnCloseBubble) {
+      btnCloseBubble.addEventListener('click', function(e) {
+        e.stopPropagation(); // prevent opening modal
+        bubbleDismissedThisSession = true;
+        bubble.classList.remove('is-visible');
+        setTimeout(function() {
+          bubble.hidden = true;
+        }, 200);
+      });
+    }
+
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+
+    if (modal) {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeModal();
+      });
+
+      modal.addEventListener('close', function () {
+        if (checkbox && checkbox.checked) {
+          supportDismissedThisSession = true;
+          if (widget) widget.hidden = true;
+          if (supportContainer) supportContainer.style.display = 'none';
+        }
+
+        // Restore focus
+        if (triggerElement && document.body.contains(triggerElement) && triggerElement.offsetParent !== null) {
+          triggerElement.focus();
+        } else if (btnChatHead && widget && !widget.hidden) {
+          btnChatHead.focus();
+        } else if (btnSupportFooter && supportContainer && supportContainer.style.display !== 'none') {
+          btnSupportFooter.focus();
+        }
+      });
+    }
+
+    function showWidget() {
+      if (supportDismissedThisSession) return;
+      
+      if (supportContainer) supportContainer.style.display = '';
+      if (widget) widget.hidden = false;
+      
+      if (!bubbleDismissedThisSession && bubble) {
+        bubble.hidden = false;
+        void bubble.offsetWidth; // trigger reflow
+        bubble.classList.add('is-visible');
+      }
+    }
+
+    // QR Loading
+    if (qrWrap && qrImg) {
+      qrImg.onload = function () {
+        qrWrap.hidden = false;
+        showWidget();
+      };
+      qrImg.onerror = function () {
+        qrWrap.hidden = true;
+        if (widget) widget.hidden = true;
+        if (supportContainer) supportContainer.style.display = 'none';
+      };
+      qrImg.src = DONATION_QR_PATH;
+    }
+  }
+
+  /* =========================================================
+     INITIALISATION
+     ========================================================= */
+  function init() {
+    var form = $('#resumeForm');
+    if (form) {
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+      });
+    }
+
+    bindStaticControls();
+    bindPhotoControls();
+
+    var addCategoryBtn = $('#btnAddCategory');
+    if (addCategoryBtn) addCategoryBtn.addEventListener('click', addSkillCategory);
+
+    var addExp = $('#btnAddExperience');
+    var addEdu = $('#btnAddEducation');
+    var addCert = $('#btnAddCertificate');
+    var addRef = $('#btnAddReference');
+    if (addExp) addExp.addEventListener('click', addExperience);
+    if (addEdu) addEdu.addEventListener('click', addEducation);
+    if (addCert) addCert.addEventListener('click', addCertificate);
+    if (addRef) addRef.addEventListener('click', addReference);
+
+    var btnDownload = $('#btnDownload');
+    var btnPrint = $('#btnPrint');
+    var btnClear = $('#btnClear');
+    var btnLoadDemo = $('#btnLoadDemo');
+
+    if (btnDownload) btnDownload.addEventListener('click', downloadPDF);
+    if (btnPrint) btnPrint.addEventListener('click', printResume);
+    if (btnClear) btnClear.addEventListener('click', clearResume);
+    if (btnLoadDemo) btnLoadDemo.addEventListener('click', loadDemo);
+
+    // Clear Modal interactions
+    var clearModal = $('#clearModal');
+    var btnCancelClear = $('#btnCancelClear');
+    var btnConfirmClear = $('#btnConfirmClear');
+
+    if (btnCancelClear) {
+      btnCancelClear.addEventListener('click', function () {
+        if (clearModal) clearModal.close();
+      });
+    }
+
+    if (btnConfirmClear) {
+      btnConfirmClear.addEventListener('click', function () {
+        if (clearModal) clearModal.close();
+        performClear();
+      });
+    }
+
+    if (clearModal) {
+      clearModal.addEventListener('click', function (event) {
+        if (event.target === clearModal) {
+          clearModal.close();
+        }
+      });
+      clearModal.addEventListener('close', function () {
+        var menuToggle = $('#moreMenuToggle');
+        if (menuToggle) menuToggle.focus();
+      });
+    }
+
+    var brandLink = $('#brandLink');
+    if (brandLink) {
+      brandLink.addEventListener('click', function (event) {
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    setupTheme();
+    setupNavigation();
+    setupMoreMenu();
+    setupMobileView();
+    setupSupportModal();
+
+    window.addEventListener('resize', scheduleScaleUpdate);
+    window.addEventListener('orientationchange', function () {
+      setTimeout(updateScale, 200);
+    });
+
+    window.addEventListener('beforeunload', function () {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveState();
+      }
+    });
+
+    renderAll(true);
+    saveState();
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { updateScale(); });
+    }
+    setTimeout(updateScale, 200);
+    window.addEventListener('load', function () { setTimeout(updateScale, 100); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>
